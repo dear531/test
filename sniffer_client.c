@@ -1,42 +1,62 @@
 /* File: client.c */
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
+#include <unistd.h>
+
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+
+#include "head.h"
+
 int main(int argc, char **argv)
 {
-	int fd;
-	struct sockaddr_in address;
-	int address_len;
-	int rtval;
-	char *data = "Client to Server string!\n";
-	char data2[100];
-	int len;
-	//建立套接口
-	fd = socket(AF_INET, SOCK_STREAM, 0);
-	if (fd < 0)
-		printf("client socket failed\n");
-	//联接
-	address.sin_family = AF_INET;
-	address.sin_addr.s_addr = inet_addr("192.168.1.110");
-	address.sin_port = htons(8001);
-	address_len = sizeof(address);
-	rtval = connect(fd, (struct sockaddr *)&address, address_len);
-	if(rtval == -1)
+	int sock_fd;
+	struct sockaddr_in client_addr;
+	int client_addr_len;
+	char recv_buff[INET_ADDRSTRLEN];
+	sock_fd = socket(AF_INET, SOCK_STREAM, 0);
+	if (sock_fd < 0)
 	{
-		printf("client connect failed\n");
+		prerr("socket");
 		exit(1);
 	}
-	//发送数据
-	write(fd, (void *)data, strlen(data));
-	printf("sent line:%s", data);
+	client_addr.sin_family = AF_INET;
+	client_addr.sin_addr.s_addr = inet_addr("127.0.0.1");
+	client_addr.sin_port = htons(8001);
+	client_addr_len = sizeof(client_addr);
 
-	//接收数据
-	len = read(fd, (void *)data2, 100);
-	printf("readline:%s\t", data2);
+	int rtval;
+	rtval = connect(sock_fd, (struct sockaddr *)&client_addr, client_addr_len);
+	if(rtval == -1)
+	{
+		prerr("connect");
+		exit(1);
+	}
+	int rsnum;
+
+	char *send_buf = "Client to Server string!\n";
+	rsnum = send(sock_fd, (void *)send_buf, strlen(send_buf), 0);
+	if (rsnum < 0)
+	{
+		prerr("send");
+		exit(1);
+	}
+	printf("sent line:%s", send_buf);
+
+	rsnum  = recv(sock_fd, (void *)recv_buff, INET_ADDRSTRLEN, 0);
+	if (rsnum < 0)
+	{
+		prerr("recv");
+		exit(1);
+	}
+
+	printf("readline:%s\t", recv_buff);
+	
 	printf("client exit.\n");
-	//关闭
-	close(fd);
+
+	close(sock_fd);
+	return 0;
 }

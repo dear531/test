@@ -9,7 +9,7 @@ server:sniffer_server.o
 	$(CC) $^ -o $@ 
 client:sniffer_client.o
 	$(CC) $^ -o $@
-$(obj):%.o:%.c 
+$(obj):%.o:%.c head.h
 	$(CC) $(CFLAGS) $< -o $@
 clean:
 	-rm -rf $(obj) .*.swp  a.out
